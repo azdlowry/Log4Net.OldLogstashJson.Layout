@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Log4Net.OldLogstashJson.Layout")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A Log4Net layout for JSON compatible with oldlogstashjson format in logstash")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Andy Lowry")]
 [assembly: AssemblyProduct("Log4Net.OldLogstashJson.Layout")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
