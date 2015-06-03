@@ -103,6 +103,21 @@ namespace OldLogstashJson.Tests
             Assert.AreEqual((int)output["@fields"]["value"], obj);
         }
 
+        [TestMethod]
+        public void AddsExceptionIfSpecified()
+        {
+            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var exception = GenerateException();
+
+            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+
+            Assert.AreEqual((string)output["@message"], exception.Message);
+            Assert.AreEqual((string)output["@fields"]["stack"], exception.StackTrace);
+        }
+
         private JObject SendEvent(log4net.Layout.ILayout layout, log4net.Core.LoggingEvent ev)
         {
             var builder = new StringBuilder();
@@ -112,6 +127,18 @@ namespace OldLogstashJson.Tests
             }
 
             return JObject.Parse(builder.ToString());
+        }
+
+        private Exception GenerateException()
+        {
+            try
+            {
+                throw null;
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
         }
     }
 }

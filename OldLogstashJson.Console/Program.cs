@@ -19,6 +19,15 @@ namespace OldLogstashJson.Console
             log.Warn("Hi There");
             log.Warn(new { Hi = 2, Lo = "string", Complex = new { ComplicatedObject = true } });
 
+            try
+            {
+                throw null;
+            }
+            catch (Exception ex)
+            {
+                log.Error("Boom", ex);
+            }
+
             System.Console.ReadKey();
         }
     }

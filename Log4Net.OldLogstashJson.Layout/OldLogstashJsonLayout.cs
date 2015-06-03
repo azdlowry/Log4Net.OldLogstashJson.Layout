@@ -14,6 +14,11 @@ namespace Log4Net.OldLogstashJson.Layout
     {
         public string Type { get; set; }
 
+        public OldLogstashJsonLayout()
+        {
+            IgnoresException = false;
+        }
+
         public override void ActivateOptions()
         {
         }
@@ -25,7 +30,12 @@ namespace Log4Net.OldLogstashJson.Layout
             message["@source_host"] = Environment.MachineName;
             message["@type"] = this.Type;
             message["@tags"] = new JArray(loggingEvent.LoggerName);
-            if (loggingEvent.MessageObject is string)
+            if (loggingEvent.ExceptionObject != null)
+            {
+                message["@message"] = loggingEvent.ExceptionObject.Message;
+                message["@fields"] = JObject.FromObject(new { stack = loggingEvent.ExceptionObject.StackTrace });
+            }
+            else if (loggingEvent.MessageObject is string)
             {
                 message["@message"] = (string)loggingEvent.MessageObject;
             }
