@@ -12,6 +12,8 @@ namespace Log4Net.OldLogstashJson.Layout
 {
     public class OldLogstashJsonLayout : LayoutSkeleton
     {
+        public string Type { get; set; }
+
         public override void ActivateOptions()
         {
         }
@@ -21,7 +23,8 @@ namespace Log4Net.OldLogstashJson.Layout
             var message = new JObject();
             message["@timestamp"] = DateTime.Now.ToString();
             message["@source_host"] = Environment.MachineName;
-            message["@type"] = loggingEvent.LoggerName;
+            message["@type"] = this.Type;
+            message["@tags"] = new JArray(loggingEvent.LoggerName);
             if (loggingEvent.MessageObject is string)
             {
                 message["@message"] = (string)loggingEvent.MessageObject;

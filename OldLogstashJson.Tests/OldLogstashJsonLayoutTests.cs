@@ -36,7 +36,7 @@ namespace OldLogstashJson.Tests
         }
 
         [TestMethod]
-        public void AddsType()
+        public void AddsLoggerNameAsTag()
         {
             var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
 
@@ -44,7 +44,21 @@ namespace OldLogstashJson.Tests
 
             var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
-            Assert.AreEqual((string)output["@type"], "mylogger");
+            Assert.AreEqual((string)output["@tags"][0], "mylogger");
+        }
+
+        [TestMethod]
+        public void AddsTypeAsConfigured()
+        {
+            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+
+            layout.Type = "my_logging";
+
+            layout.ActivateOptions();
+
+            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+
+            Assert.AreEqual((string)output["@type"], "my_logging");
         }
 
         [TestMethod]

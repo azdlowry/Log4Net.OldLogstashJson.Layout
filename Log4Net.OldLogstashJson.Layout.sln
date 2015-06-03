@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Log4Net.OldLogstashJson.Lay
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OldLogstashJson.Tests", "OldLogstashJson.Tests\OldLogstashJson.Tests.csproj", "{9536B822-E04F-4AC1-9A60-03824978B222}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OldLogstashJson.Console", "OldLogstashJson.Console\OldLogstashJson.Console.csproj", "{B8301F7F-B77A-4B00-A7DE-96A2D3DC1DD5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{9536B822-E04F-4AC1-9A60-03824978B222}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9536B822-E04F-4AC1-9A60-03824978B222}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9536B822-E04F-4AC1-9A60-03824978B222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8301F7F-B77A-4B00-A7DE-96A2D3DC1DD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8301F7F-B77A-4B00-A7DE-96A2D3DC1DD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8301F7F-B77A-4B00-A7DE-96A2D3DC1DD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8301F7F-B77A-4B00-A7DE-96A2D3DC1DD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
