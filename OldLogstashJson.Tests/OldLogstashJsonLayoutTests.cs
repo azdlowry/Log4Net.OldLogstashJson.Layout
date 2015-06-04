@@ -5,6 +5,7 @@ using System.Text;
 using log4net.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 
 namespace OldLogstashJson.Tests
 {
@@ -20,7 +21,7 @@ namespace OldLogstashJson.Tests
 
             var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
-            Assert.IsTrue(DateTime.Parse((string)output["@timestamp"]) <= DateTime.Now);
+            Assert.IsTrue(DateTime.ParseExact((string)output["@timestamp"], "yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture) <= DateTime.Now);
         }
 
         [TestMethod]
@@ -125,8 +126,9 @@ namespace OldLogstashJson.Tests
             {
                 layout.Format(writer, ev);
             }
-
-            return JObject.Parse(builder.ToString());
+            JsonReader reader = new JsonTextReader(new StringReader(builder.ToString()));
+            reader.DateParseHandling = DateParseHandling.None;
+            return JObject.Load(reader);
         }
 
         private Exception GenerateException()

@@ -7,6 +7,7 @@ using log4net;
 using log4net.Layout;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Globalization;
 
 namespace Log4Net.OldLogstashJson.Layout
 {
@@ -26,7 +27,7 @@ namespace Log4Net.OldLogstashJson.Layout
         public override void Format(System.IO.TextWriter writer, log4net.Core.LoggingEvent loggingEvent)
         {
             var message = new JObject();
-            message["@timestamp"] = DateTime.Now.ToString();
+            message["@timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
             message["@source_host"] = Environment.MachineName;
             message["@type"] = this.Type;
             message["@tags"] = new JArray(loggingEvent.LoggerName);
