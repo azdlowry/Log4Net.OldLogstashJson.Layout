@@ -8,6 +8,7 @@ using log4net.Layout;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
+using log4net.Util;
 
 namespace Log4Net.OldLogstashJson.Layout
 {
@@ -30,15 +31,24 @@ namespace Log4Net.OldLogstashJson.Layout
             message["@timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
             message["@source_host"] = Environment.MachineName;
             message["@type"] = this.Type;
-            message["@tags"] = new JArray(loggingEvent.LoggerName);
-            if (loggingEvent.ExceptionObject != null)
+            message["@tags"] = new JArray(loggingEvent.LoggerName, loggingEvent.Level.ToString().ToLower());
+
+            var exception = GetException(loggingEvent);
+            if (exception != null)
             {
-                message["@message"] = loggingEvent.ExceptionObject.Message;
-                message["@fields"] = JObject.FromObject(new { stack = loggingEvent.ExceptionObject.StackTrace });
+                if (loggingEvent.MessageObject is string || loggingEvent.MessageObject is SystemStringFormat)
+                {
+                    message["@message"] = loggingEvent.RenderedMessage;
+                }
+                else
+                {
+                    message["@message"] = exception.Message;
+                }
+                message["@fields"] = JObject.FromObject(exception);
             }
-            else if (loggingEvent.MessageObject is string)
+            else if (loggingEvent.MessageObject is string || loggingEvent.MessageObject is SystemStringFormat)
             {
-                message["@message"] = (string)loggingEvent.MessageObject;
+                message["@message"] = loggingEvent.RenderedMessage;
             }
             else if (loggingEvent.MessageObject != null && !loggingEvent.MessageObject.GetType().IsValueType)
             {
@@ -50,6 +60,17 @@ namespace Log4Net.OldLogstashJson.Layout
             }
 
             writer.Write(JObject.FromObject(message));
+        }
+
+        private Exception GetException(log4net.Core.LoggingEvent loggingEvent)
+        {
+            if (loggingEvent.ExceptionObject is Exception)
+                return loggingEvent.ExceptionObject;
+
+            if (loggingEvent.MessageObject is Exception)
+                return (Exception)loggingEvent.MessageObject;
+
+            return null;
         }
     }
 }

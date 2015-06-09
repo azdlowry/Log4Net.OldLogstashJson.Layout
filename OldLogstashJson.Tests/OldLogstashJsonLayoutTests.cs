@@ -1,125 +1,213 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using System.IO;
 using System.Text;
 using log4net.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
+using Log4Net.OldLogstashJson.Layout;
+using NUnit.Framework;
 
 namespace OldLogstashJson.Tests
 {
-    [TestClass]
-    public class OldLogstashJsonLayout
+    [TestFixture]
+    public class OldLogstashJsonLayoutTests
     {
-        [TestMethod]
+        [Test]
         public void AddsTimestamp()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
             Assert.IsTrue(DateTime.ParseExact((string)output["@timestamp"], "yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture) <= DateTime.Now);
         }
 
-        [TestMethod]
+        [Test]
         public void AddsHostname()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
             Assert.AreEqual((string)output["@source_host"], Environment.MachineName);
         }
 
-        [TestMethod]
+        [Test]
         public void AddsLoggerNameAsTag()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
-            Assert.AreEqual((string)output["@tags"][0], "mylogger");
+            var tags = output["@tags"].Select(obj => (string)obj);
+            Assert.That(tags, Has.Member("mylogger"));
         }
 
-        [TestMethod]
+        [Test]
         public void AddsTypeAsConfigured()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
-
-            layout.Type = "my_logging";
+            var layout = new OldLogstashJsonLayout { Type = "my_logging" };
 
             layout.ActivateOptions();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
 
             Assert.AreEqual((string)output["@type"], "my_logging");
         }
 
-        [TestMethod]
+        [Test]
         public void AddsMessageIfString()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "Banana", null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "Banana", null));
 
             Assert.AreEqual((string)output["@message"], "Banana");
         }
 
-        [TestMethod]
+        [Test]
+        public void AddsFormattedMessageIfString()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, new log4net.Util.SystemStringFormat(CultureInfo.CurrentCulture, "Blah {0}", "Jeff"), null));
+
+            Assert.AreEqual((string)output["@message"], "Blah Jeff");
+        }
+
+        [Test]
         public void AddsFeildsIfObject()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
             var obj = new { Hi = 2, Lo = "string", Complex = new { ComplicatedObject = true } };
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
 
             Assert.AreEqual((int)output["@fields"]["Hi"], obj.Hi);
             Assert.AreEqual((string)output["@fields"]["Lo"], obj.Lo);
             Assert.AreEqual((bool)output["@fields"]["Complex"]["ComplicatedObject"], obj.Complex.ComplicatedObject);
         }
 
-        [TestMethod]
+        [Test]
         public void AddsValueIfValueType()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
-            var obj = 1;
+            const int obj = 1;
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
 
             Assert.AreEqual((int)output["@fields"]["value"], obj);
         }
 
-        [TestMethod]
+        [Test]
         public void AddsExceptionIfSpecified()
         {
-            var layout = new Log4Net.OldLogstashJson.Layout.OldLogstashJsonLayout();
+            var layout = new OldLogstashJsonLayout();
 
             layout.ActivateOptions();
 
             var exception = GenerateException();
 
-            var output = SendEvent(layout, new log4net.Core.LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
 
-            Assert.AreEqual((string)output["@message"], exception.Message);
-            Assert.AreEqual((string)output["@fields"]["stack"], exception.StackTrace);
+            Assert.AreEqual((string)output["@fields"]["Message"], exception.Message);
+            Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
         }
 
-        private JObject SendEvent(log4net.Layout.ILayout layout, log4net.Core.LoggingEvent ev)
+        [Test]
+        public void AddsMessageIfExceptionIsSpecified()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var exception = GenerateException();
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "mymessage", exception));
+
+            Assert.AreEqual((string)output["@message"], "mymessage");
+            Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
+        }
+
+        [Test]
+        public void AddsExceptionMessageIfExceptionIsSpecifiedButMessageIsNot()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var exception = GenerateException();
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, exception, null));
+
+            Assert.AreEqual((string)output["@message"], exception.Message);
+            Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
+        }
+
+        [Test]
+        public void AddsExceptionDataIfSpecified()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var exception = GenerateException();
+
+            exception.Data.Add("blah", "hello");
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+
+            Assert.AreEqual((string)output["@fields"]["Data"]["blah"], "hello");
+        }
+
+        [Test]
+        public void AddsExceptionType()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var exception = GenerateException();
+
+            exception.Data.Add("blah", "hello");
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+
+            Assert.AreEqual((string)output["@fields"]["ClassName"], exception.GetType().ToString());
+        }
+
+        [Test]
+        public void AddsLogLevelAsTag()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            layout.ActivateOptions();
+
+            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "some info", null));
+
+            var tags = output["@tags"].Select(obj => (string)obj);
+            Assert.That(tags, Has.Member("info"));
+        }
+
+        private JObject SendEvent(log4net.Layout.ILayout layout, LoggingEvent ev)
         {
             var builder = new StringBuilder();
             using (var writer = new StringWriter(builder))
@@ -135,12 +223,32 @@ namespace OldLogstashJson.Tests
         {
             try
             {
+                // ReSharper disable PossibleNullReferenceException
                 throw null;
+                // ReSharper restore PossibleNullReferenceException
             }
             catch (Exception ex)
             {
                 return ex;
             }
+        }
+
+        private Exception GenerateAggregateException()
+        {
+            try
+            {
+                Enumerable.Range(1, 3).AsParallel().ForAll(n =>
+                {
+                    // ReSharper disable PossibleNullReferenceException
+                    throw null;
+                    // ReSharper restore PossibleNullReferenceException
+                });
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+            return null;
         }
     }
 }
