@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using System.Globalization;
 using Log4Net.OldLogstashJson.Layout;
 using NUnit.Framework;
+using log4net.Layout;
 
 namespace OldLogstashJson.Tests
 {
@@ -19,9 +20,7 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, CreateLoggingEvent(null, null));
 
             Assert.IsTrue(DateTime.ParseExact((string)output["@timestamp"], "yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture) <= DateTime.Now);
         }
@@ -31,9 +30,7 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, CreateLoggingEvent(null, null));
 
             Assert.AreEqual((string)output["@source_host"], Environment.MachineName);
         }
@@ -43,9 +40,7 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, CreateLoggingEvent(null, null));
 
             var tags = output["@tags"].Select(obj => (string)obj);
             Assert.That(tags, Has.Member("mylogger"));
@@ -56,9 +51,7 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout { Type = "my_logging" };
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, null, null));
+            var output = SendEvent(layout, CreateLoggingEvent(null, null));
 
             Assert.AreEqual((string)output["@type"], "my_logging");
         }
@@ -68,9 +61,7 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "Banana", null));
+            var output = SendEvent(layout, CreateLoggingEvent("Banana", null));
 
             Assert.AreEqual((string)output["@message"], "Banana");
         }
@@ -80,9 +71,9 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
+            var message = new log4net.Util.SystemStringFormat(CultureInfo.CurrentCulture, "Blah {0}", "Jeff");
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, new log4net.Util.SystemStringFormat(CultureInfo.CurrentCulture, "Blah {0}", "Jeff"), null));
+            var output = SendEvent(layout, CreateLoggingEvent(message, null));
 
             Assert.AreEqual((string)output["@message"], "Blah Jeff");
         }
@@ -92,11 +83,9 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var obj = new { Hi = 2, Lo = "string", Complex = new { ComplicatedObject = true } };
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
+            var output = SendEvent(layout, CreateLoggingEvent(obj, null));
 
             Assert.AreEqual((int)output["@fields"]["Hi"], obj.Hi);
             Assert.AreEqual((string)output["@fields"]["Lo"], obj.Lo);
@@ -108,11 +97,8 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             const int obj = 1;
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, obj, null));
+            var output = SendEvent(layout, CreateLoggingEvent(obj, null));
 
             Assert.AreEqual((int)output["@fields"]["value"], obj);
         }
@@ -122,11 +108,9 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var exception = GenerateException();
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+            var output = SendEvent(layout, CreateLoggingEvent("error", exception));
 
             Assert.AreEqual((string)output["@fields"]["Message"], exception.Message);
             Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
@@ -137,11 +121,9 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var exception = GenerateException();
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "mymessage", exception));
+            var output = SendEvent(layout, CreateLoggingEvent("mymessage", exception));
 
             Assert.AreEqual((string)output["@message"], "mymessage");
             Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
@@ -152,11 +134,9 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var exception = GenerateException();
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, exception, null));
+            var output = SendEvent(layout, CreateLoggingEvent(exception, null));
 
             Assert.AreEqual((string)output["@message"], exception.Message);
             Assert.AreEqual((string)output["@fields"]["StackTraceString"], exception.StackTrace);
@@ -167,13 +147,11 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var exception = GenerateException();
 
             exception.Data.Add("blah", "hello");
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+            var output = SendEvent(layout, CreateLoggingEvent("error", exception));
 
             Assert.AreEqual((string)output["@fields"]["Data"]["blah"], "hello");
         }
@@ -183,13 +161,11 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
             var exception = GenerateException();
 
             exception.Data.Add("blah", "hello");
 
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "error", exception));
+            var output = SendEvent(layout, CreateLoggingEvent("error", exception));
 
             Assert.AreEqual((string)output["@fields"]["ClassName"], exception.GetType().ToString());
         }
@@ -199,15 +175,19 @@ namespace OldLogstashJson.Tests
         {
             var layout = new OldLogstashJsonLayout();
 
-            layout.ActivateOptions();
-
-            var output = SendEvent(layout, new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, "some info", null));
+            var output = SendEvent(layout, CreateLoggingEvent("some info", null));
 
             var tags = output["@tags"].Select(obj => (string)obj);
             Assert.That(tags, Has.Member("info"));
         }
 
-        private JObject SendEvent(log4net.Layout.ILayout layout, LoggingEvent ev)
+        private static LoggingEvent CreateLoggingEvent(object message, Exception exception)
+        {
+            return new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, message, exception);
+        }
+
+
+        private JObject SendEvent(ILayout layout, LoggingEvent ev)
         {
             var builder = new StringBuilder();
             using (var writer = new StringWriter(builder))
@@ -232,25 +212,8 @@ namespace OldLogstashJson.Tests
                 return ex;
             }
         }
-
-        private Exception GenerateAggregateException()
-        {
-            try
-            {
-                Enumerable.Range(1, 3).AsParallel().ForAll(n =>
-                {
-                    // ReSharper disable PossibleNullReferenceException
-                    throw null;
-                    // ReSharper restore PossibleNullReferenceException
-                });
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
-            return null;
-        }
     }
+
 }
 
 
