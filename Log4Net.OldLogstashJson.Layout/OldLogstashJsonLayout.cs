@@ -48,6 +48,13 @@ namespace Log4Net.OldLogstashJson.Layout
                 message["@fields"] = JObject.FromObject(loggingEvent.MessageObject);
             else if (IsValueObject(loggingEvent))
                 message["@fields"] = JObject.FromObject(new { value = loggingEvent.MessageObject });
+
+            var fields = message["@fields"] as JObject;
+            if (fields != null)
+            {
+                var properties = JObject.FromObject(loggingEvent.GetProperties());
+                fields.Add("EventProperties", properties);
+            }
         }
 
         private bool IsValueObject(LoggingEvent loggingEvent)

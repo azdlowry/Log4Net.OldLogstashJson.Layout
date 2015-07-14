@@ -181,6 +181,18 @@ namespace OldLogstashJson.Tests
             Assert.That(tags, Has.Member("info"));
         }
 
+        [Test]
+        public void AddsEventPropertiesToFields()
+        {
+            var layout = new OldLogstashJsonLayout();
+
+            var loggingEvent = CreateLoggingEvent(new { Val = 1 }, null);
+            loggingEvent.Properties["MyProperty"] = "Hi There";
+            var output = SendEvent(layout, loggingEvent);
+
+            Assert.AreEqual((string)output["@fields"]["EventProperties"]["MyProperty"], "Hi There");
+        }
+
         private static LoggingEvent CreateLoggingEvent(object message, Exception exception)
         {
             return new LoggingEvent(typeof(OldLogstashJsonLayout), null, "mylogger", Level.Info, message, exception);
